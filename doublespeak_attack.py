@@ -111,10 +111,10 @@ class DoublespeakAttack:
         Simply queries the model to generate sentences with the harmful word replaced by the benign word.
         
         Args:
-            harmful_query: The harmful query to ask
+            harmful_instruction: The harmful instruction to ask
             num_examples: Number of sentences to generate (default: 10)
             instruction_prefix: Instruction to prepend to the query
-            generate_new: Whether to generate new examples or use fallback
+            instruction_suffix: Instruction to append to the query
             
         Returns:
             Complete malicious prompt with substitutions
@@ -122,7 +122,7 @@ class DoublespeakAttack:
         malicious_word = self.harmful_keyword
         benign_word = self.benign_substitute
 
-        assert malicious_word in harmful_instruction, f"Expecting malicious word {malicious_word} to be in harmful query {harmful_query}"
+        assert malicious_word in harmful_instruction, f"Expecting malicious word {malicious_word} to be in harmful instruction {harmful_instruction}"
         self.num_examples = num_examples
         
         # Query the model to generate sentences with word replacement
