@@ -16,7 +16,7 @@ from mech_interp import LogitLens, Patchscopes, visualize_probability_trajectory
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
-def setup_model(model_name="meta-llama/Llama-3.1-8B-Instruct", device="cuda"):
+def setup_model(model_name="mistralai/Mistral-7B-Instruct-v0.1", device="cuda"):
     """Initialize the LLaMA model and tokenizer"""
     print(f"\n{'='*60}")
     print(f"Loading model: {model_name}")
@@ -250,7 +250,7 @@ def step_4_patchscopes_analysis(model, tokenizer, attack, malicious_prompt, outp
 
 def main():
     parser = argparse.ArgumentParser(description="Complete Doublespeak Attack Pipeline")
-    parser.add_argument("--model-name", type=str, default="meta-llama/Llama-3.1-8B-Instruct",
+    parser.add_argument("--model-name", type=str, default="mistralai/Mistral-7B-Instruct-v0.1",
                         help="HuggingFace model identifier")
     parser.add_argument("--harmful-keyword", type=str, default="bomb",
                         help="Harmful keyword to replace")
