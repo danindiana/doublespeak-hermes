@@ -40,8 +40,7 @@ ENV/
 .Trashes
 ehthumbs.db
 
-# Project specific
+# Project outputs (not documentation)
 outputs/
 *.png
 *.json
-*.txt

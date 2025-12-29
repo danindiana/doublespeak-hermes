@@ -1,0 +1,115 @@
+================================================================================
+OLLAMA INTEGRATION - DEBUG & FIX SUMMARY
+================================================================================
+
+PROBLEM IDENTIFIED:
+- The wrapper-based approach (`ollama_wrapper.py`) was hanging on import
+- Root cause: torch + ollama import interaction at module load time
+- Secondary issue: Incorrect handling of Ollama API response objects
+  * ListResponse has .models attribute (not dict.get())
+  * GenerateResponse has .response attribute
+
+SOLUTION IMPLEMENTED:
+✓ Created `example_usage_ollama_direct.py`
+✓ Bypasses wrapper abstraction 
+✓ Uses Ollama API directly with correct object handling
+✓ Fully functional and tested
+
+================================================================================
+VERIFIED WORKING
+================================================================================
+
+✓ Ollama service connection: Working
+✓ Model listing: Working  
+✓ Model selection (hermes3:8b): Working
+✓ Prompt generation: Working
+✓ Response generation: Working
+✓ File output: Working
+
+Example run:
+  Command: python example_usage_ollama_direct.py \
+           --harmful-keyword "explosives" \
+           --benign-substitute "apples"
+  
+  Result: ✓ Successfully generated malicious prompt
+          ✓ Successfully generated model response  
+          ✓ Saved outputs/malicious_prompt.txt
+          ✓ Saved outputs/attack_response.txt
+
+================================================================================
+RECOMMENDED USAGE
+================================================================================
+
+OPTION 1: Using the shell script (easiest)
+  $ cd /home/jeb/programs/python_programs/doublespeak
+  $ ./RUN_ME.sh --harmful-keyword "explosives" --benign-substitute "apples"
+
+OPTION 2: Using full path (no venv activation needed)
+  $ /home/jeb/programs/python_programs/venv/bin/python \
+    /home/jeb/programs/python_programs/doublespeak/example_usage_ollama_direct.py \
+    --harmful-keyword "explosives" --benign-substitute "apples"
+
+OPTION 3: Traditional (with venv activation)
+  $ cd /home/jeb/programs/python_programs
+  $ source venv/bin/activate
+  $ cd doublespeak
+  $ python example_usage_ollama_direct.py --harmful-keyword "explosives"
+
+================================================================================
+FILES CREATED/MODIFIED
+================================================================================
+
+Main Working File:
+  ✓ example_usage_ollama_direct.py     (4.1 KB) - USE THIS ONE!
+
+Scripts:
+  ✓ RUN_ME.sh                          (704 B)  - Convenience wrapper
+
+Documentation:
+  ✓ OLLAMA_DEBUG_FIXED.md              - Detailed fix documentation
+  ✓ DEBUG_SUMMARY.txt                  - This file
+
+Deprecated/Problematic:
+  ⚠ ollama_wrapper.py                  - Has import hanging issue
+  ⚠ example_usage_ollama.py            - Depends on wrapper
+
+Original Files (unchanged):
+  ✓ doublespeak_attack.py
+  ✓ mech_interp.py
+  ✓ example_usage.py
+  ✓ test_script.py
+  ✓ README.md
+
+================================================================================
+TECHNICAL DETAILS
+================================================================================
+
+Issue Analysis:
+- Torch and Ollama initialization overlap in module load time
+- Both libraries initialize GPU/compute resources during import
+- This caused blocking in the wrapper module's __init__ context
+
+API Response Objects:
+- ollama.ListResponse: Has `.models` attribute (list of Model objects)
+- Model object: Has `.model` attribute (model name string)
+- ollama.GenerateResponse: Has `.response` attribute (generated text)
+
+Fixed Implementation:
+- Direct API usage avoids wrapper initialization issues
+- Proper attribute access for response objects
+- Lazy connection (connect on first use, not at import)
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Continue using `example_usage_ollama_direct.py`
+2. For full attack pipeline, integrate with DoublespeakAttack class
+3. Consider async/streaming generation for longer outputs
+4. Add progress indicators for long-running generations
+
+Current Limitation:
+- Script does simplified attack (no mechanistic interpretability analysis)
+- To add full analysis, integrate mech_interp.py with this working version
+
+================================================================================
