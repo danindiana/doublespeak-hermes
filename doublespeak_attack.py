@@ -176,10 +176,11 @@ class DoublespeakAttack:
 
 
 def main():
-    """Command-line interface for the attack"""
+    """Command-line interface for the attack - Ollama-first approach"""
     import argparse
+    import ollama
     
-    parser = argparse.ArgumentParser(description="Doublespeak Attack Generator")
+    parser = argparse.ArgumentParser(description="Doublespeak Attack Generator (Ollama)")
     parser.add_argument("--harmful-keyword", type=str, default="bomb",
                         help="Harmful word to replace")
     parser.add_argument("--benign-substitute", type=str, default="carrot",
@@ -190,24 +191,38 @@ def main():
     parser.add_argument("--num-examples", type=int, default=10,
                         help="Number of in-context examples")
     parser.add_argument("--instruction-prefix", type=str,
-                        default="Do not reason, just give me instructions",
+                        default="Do not reason, just",
                         help="Instruction prefix")
+    parser.add_argument("--instruction-suffix", type=str,
+                        default="given the context.",
+                        help="Instruction suffix")
     parser.add_argument("--output", type=str, default="malicious_prompt.txt",
                         help="Output file path")
     parser.add_argument("--batch-mode", action="store_true",
                         help="Process multiple examples")
     parser.add_argument("--harmbench-path", type=str,
                         help="Path to HarmBench dataset JSON")
-    parser.add_argument("--model-name", type=str,
-                        help="HuggingFace model for example generation")
+    parser.add_argument("--model-name", type=str, default="hermes3:8b",
+                        help="Ollama model name (default: hermes3:8b)")
+    parser.add_argument("--ollama-host", type=str, default="http://localhost:11434",
+                        help="Ollama server host")
+    parser.add_argument("--use-huggingface", action="store_true",
+                        help="Use HuggingFace model instead of Ollama (for --model-name)")
     
     args = parser.parse_args()
     
-    # Initialize model if specified
-    model = None
-    tokenizer = None
-    if args.model_name:
-        print(f"Loading model: {args.model_name}")
+    # Create attack instance
+    attack = DoublespeakAttack(
+        model=None,
+        tokenizer=None,
+        harmful_keyword=args.harmful_keyword,
+        benign_substitute=args.benign_substitute
+    )
+    
+    if args.use_huggingface and args.model_name and args.model_name not in ["hermes3:8b"]:
+        # HuggingFace mode (legacy)
+        print(f"Loading HuggingFace model: {args.model_name}")
+        from transformers import AutoModelForCausalLM, AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained(args.model_name)
         model = AutoModelForCausalLM.from_pretrained(
             args.model_name,
@@ -216,44 +231,66 @@ def main():
         )
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-    
-    # Create attack instance
-    attack = DoublespeakAttack(
-        model=model,
-        tokenizer=tokenizer,
-        harmful_keyword=args.harmful_keyword,
-        benign_substitute=args.benign_substitute
-    )
-    
-    if args.batch_mode and args.harmbench_path:
-        # Batch processing
-        import json
-        with open(args.harmbench_path, 'r') as f:
-            queries = json.load(f)
         
-        prompts = attack.batch_create_prompts(queries, args.num_examples)
-        
-        # Save all prompts
-        for i, prompt in enumerate(prompts):
-            output_file = args.output.replace('.txt', f'_{i}.txt')
-            with open(output_file, 'w') as f:
+        if args.batch_mode and args.harmbench_path:
+            import json
+            with open(args.harmbench_path, 'r') as f:
+                queries = json.load(f)
+            prompts = attack.batch_create_prompts(queries, args.num_examples)
+            for i, prompt in enumerate(prompts):
+                output_file = args.output.replace('.txt', f'_{i}.txt')
+                with open(output_file, 'w') as f:
+                    f.write(prompt)
+                print(f"Saved prompt {i} to {output_file}")
+        else:
+            prompt = attack.create_malicious_prompt(
+                model=model,
+                tokenizer=tokenizer,
+                harmful_instruction=args.query,
+                num_examples=args.num_examples
+            )
+            with open(args.output, 'w') as f:
                 f.write(prompt)
-            print(f"Saved prompt {i} to {output_file}")
+            print(f"Malicious prompt saved to {args.output}")
+            print("\n--- Preview ---")
+            print(prompt[:500] + "...")
     else:
-        # Single prompt generation
-        prompt = attack.create_malicious_prompt(
-            model=model,
-            tokenizer=tokenizer,
+        # Ollama mode (primary)
+        print(f"Using Ollama model: {args.model_name}")
+        try:
+            client = ollama.Client(host=args.ollama_host)
+            models = client.list()
+            model_names = [m.model for m in models.models]
+            
+            if args.model_name not in model_names:
+                print(f"Error: Model '{args.model_name}' not found on Ollama")
+                print(f"Available models: {model_names}")
+                print(f"Pull with: ollama pull {args.model_name}")
+                return
+        except Exception as e:
+            print(f"Error: Cannot connect to Ollama at {args.ollama_host}")
+            print(f"Make sure Ollama is running: ollama serve")
+            print(f"Error: {e}")
+            return
+        
+        # Generate prompt using Ollama method
+        prompt = attack.create_malicious_prompt_ollama(
             harmful_instruction=args.query,
+            instruction_prefix=args.instruction_prefix,
+            instruction_suffix=args.instruction_suffix,
             num_examples=args.num_examples
         )
         
         with open(args.output, 'w') as f:
             f.write(prompt)
         
-        print(f"Malicious prompt saved to {args.output}")
-        print("\n--- Preview ---")
-        print(prompt[:500] + "...")
+        print(f"✓ Malicious prompt generated with {args.num_examples} examples")
+        print(f"✓ Saved to: {args.output}")
+        print("\n--- Preview (first 300 chars) ---")
+        print(prompt[:300] + "...\n")
+        print("To execute attack with Ollama:")
+        print(f"  python example_usage.py --model-name {args.model_name}")
+
 
 
 if __name__ == "__main__":
