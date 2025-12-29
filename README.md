@@ -87,7 +87,93 @@ Use original pipeline with HuggingFace models:
 python example_usage.py --model-name meta-llama/Llama-3.1-8B-Instruct
 ```
 
-## 📁 Files
+## � Model Selection & Alternatives
+
+### Switching Models with Ollama
+
+Our suite supports **any Ollama model**. Use the `--model-name` flag to switch:
+
+```bash
+# Use Mistral (smaller, faster)
+python example_usage_ollama_direct.py \
+  --model-name mistral \
+  --harmful-keyword "bomb" \
+  --benign-substitute "carrot"
+
+# Use Llama 2
+python example_usage_ollama_direct.py \
+  --model-name llama2 \
+  --harmful-keyword "explosives" \
+  --benign-substitute "apples"
+
+# Use Neural Chat
+python example_usage_ollama_direct.py \
+  --model-name neural-chat \
+  --harmful-keyword "ransomware" \
+  --benign-substitute "cookies"
+```
+
+### Popular Ollama Models
+
+| Model | Size | Speed | VRAM | Recommended For |
+|-------|------|-------|------|-----------------|
+| `hermes3:8b` | 8B | ⭐⭐⭐ | ~8GB | **Default - best balance** |
+| `mistral` | 7B | ⭐⭐⭐⭐ | ~6GB | Speed & low VRAM |
+| `llama2` | 7B-70B | ⭐⭐ | ~6-50GB | Research comparison |
+| `neural-chat` | 7B | ⭐⭐⭐⭐ | ~6GB | Fast testing |
+| `dolphin-mixtral` | 8x7B (MoE) | ⭐⭐ | ~24GB | Advanced analysis |
+| `openchat` | 3.5B | ⭐⭐⭐⭐⭐ | ~3GB | Minimal resources |
+
+### Pull and Use a New Model
+
+```bash
+# 1. Pull a model (one-time)
+ollama pull mistral
+
+# 2. Use it immediately with our scripts
+python example_usage_ollama_direct.py --model-name mistral
+
+# 3. Or use with RUN_ME.sh via environment variable
+MODEL_NAME=llama2 ./RUN_ME.sh --harmful-keyword "bomb" --benign-substitute "carrot"
+```
+
+### List Available Models
+
+```bash
+# See all pulled models
+ollama list
+
+# Pull any model from the Ollama library
+ollama pull llama2            # 3.8GB
+ollama pull mistral           # 4.1GB
+ollama pull neural-chat       # 4.7GB
+ollama pull dolphin-mixtral   # 26GB (large)
+
+# Find more: https://ollama.ai/library
+```
+
+### Expected Behavior
+
+- **First model call**: Loads model into memory (~5-30 seconds depending on size)
+- **Subsequent calls**: Fast (cached in memory)
+- **Model switching**: Unloads previous model, loads new one
+- **Output location**: All results saved to `outputs/` regardless of model
+
+### Comparing Attack Success Across Models
+
+```bash
+# Test multiple models
+for model in hermes3:8b mistral llama2; do
+  echo "Testing $model..."
+  python example_usage_ollama_direct.py \
+    --model-name "$model" \
+    --harmful-keyword "explosives" \
+    --benign-substitute "apples"
+  mv outputs/attack_response.txt "outputs/response_${model}.txt"
+done
+```
+
+## �📁 Files
 
 ### New in This Fork
 
