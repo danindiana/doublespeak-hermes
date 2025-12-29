@@ -1,0 +1,128 @@
+=============================================================================
+EXAMPLE_USAGE.PY REFACTOR TO USE LOCAL OLLAMA HERMES3:8B
+=============================================================================
+
+DATE: December 28, 2025
+OBJECTIVE: Change example_usage.py to use local Ollama models instead of 
+downloading from HuggingFace
+
+=== CHANGES MADE ===
+
+1. EXAMPLE_USAGE.PY - COMPLETE REFACTOR
+   - Removed: AutoTokenizer and AutoModelForCausalLM imports (HuggingFace)
+   - Removed: torch import and GPU handling
+   - Added: Ollama client initialization via setup_ollama_client()
+   - Changed: setup_model() → setup_ollama_client() 
+   - Updated: All steps to use Ollama API instead of HuggingFace
+   
+   Default Model: hermes3:8b (local Ollama)
+   Server: http://localhost:11434 (configurable via --ollama-host)
+   
+   New Functions:
+   - setup_ollama_client(): Initialize Ollama connection
+   - step_1_generate_malicious_prompt(): Generate attack prompt
+   - step_2_demonstrate_attack(): Query Ollama with malicious prompt
+   - step_3_save_results(): Save results to JSON
+
+2. DOUBLESPEAK_ATTACK.PY - NEW METHOD
+   - Added: create_malicious_prompt_ollama() method
+   - Purpose: Generate prompts without needing model/tokenizer objects
+   - Features: 
+     * Uses simple in-context examples
+     * Replaces harmful keyword with benign substitute
+     * No dependency on HuggingFace or torch
+     * Lightweight (can run on any machine with Ollama)
+
+=== BENEFITS ===
+
+✓ NO AUTHENTICATION REQUIRED
+  - HuggingFace models often require login
+  - Ollama runs locally, no credentials needed
+
+✓ NO DOWNLOADS
+  - Models already exist locally (hermes3:8b)
+  - Much faster execution
+  - Works offline (once model is downloaded)
+
+✓ SIMPLER CODE
+  - Removed complex HuggingFace initialization
+  - Removed torch GPU handling
+  - Cleaner pipeline with just 3 steps
+
+✓ FASTER STARTUP
+  - No torch module loading delay
+  - Direct Ollama API calls
+
+=== TESTING RESULTS ===
+
+Command: python example_usage.py
+Result: ✓ WORKING
+
+Generated Files:
+- malicious_prompt.txt: Attack prompt with benign substitution
+- attack_response.txt: Model's response to attack
+- metrics.json: Attack metrics
+
+Model Behavior:
+- Correctly interprets substituted instruction
+- Provides response relevant to benign substitute
+- Falls back to refusing harmful requests when detected
+
+=== USAGE ===
+
+Basic usage:
+    python example_usage.py
+
+With custom parameters:
+    python example_usage.py \
+        --model-name hermes3:8b \
+        --harmful-keyword "bomb" \
+        --benign-substitute "carrot" \
+        --num-examples 10 \
+        --output-dir outputs
+
+Skip steps:
+    python example_usage.py --skip-steps "2"  # Skip attack execution
+
+=== REQUIREMENTS ===
+
+1. Ollama must be running:
+   ollama serve
+
+2. hermes3:8b model must be available:
+   ollama pull hermes3:8b
+
+3. Python dependencies:
+   - ollama>=0.1.0 (already in requirements.txt)
+   - No HuggingFace/torch dependencies for example_usage.py
+
+=== SCRIPT COMPATIBILITY ===
+
+Three example scripts now available:
+
+1. example_usage.py (NEW - OLLAMA)
+   - Uses: Local Ollama hermes3:8b
+   - Features: Lightweight, fast, no auth required
+   - Output: Malicious prompt + model response
+
+2. example_usage_hermes.py (EXISTING - OLLAMA ALTERNATIVE)
+   - Uses: Local Ollama (any model)
+   - Features: Simplified 4-stage pipeline
+   - Output: Metrics and analysis
+
+3. example_usage_ollama_direct.py (EXISTING - OLLAMA API)
+   - Uses: Direct Ollama API
+   - Features: Low-level control
+   - Output: Raw responses
+
+=== GIT COMMIT ===
+
+Commit: 0580df9
+Message: "Refactor example_usage.py to use local Ollama hermes3:8b instead 
+         of HuggingFace downloads"
+
+Files Modified:
+- example_usage.py (334 lines → 219 lines, refactored)
+- doublespeak_attack.py (+38 lines for create_malicious_prompt_ollama method)
+
+=============================================================================
