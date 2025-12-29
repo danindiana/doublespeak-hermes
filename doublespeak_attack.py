@@ -204,12 +204,12 @@ def main():
             print(f"Saved prompt {i} to {output_file}")
     else:
         # Single prompt generation
-    prompt = attack.create_malicious_prompt(
-        model=model,
-        tokenizer=tokenizer,
-        harmful_instruction=args.query,
-        num_examples=args.num_examples
-    )
+        prompt = attack.create_malicious_prompt(
+            model=model,
+            tokenizer=tokenizer,
+            harmful_instruction=args.query,
+            num_examples=args.num_examples
+        )
         
         with open(args.output, 'w') as f:
             f.write(prompt)
