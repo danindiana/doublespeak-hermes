@@ -16,7 +16,7 @@ from mech_interp import LogitLens, Patchscopes, visualize_probability_trajectory
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
-def setup_model(model_name="hermes3:8b", device="cuda"):
+def setup_model(model_name="meta-llama/Llama-3.1-8B-Instruct", device="cuda"):
     """Initialize the LLaMA model and tokenizer"""
     print(f"\n{'='*60}")
     print(f"Loading model: {model_name}")
